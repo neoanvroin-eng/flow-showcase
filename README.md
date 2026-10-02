@@ -150,6 +150,7 @@ Flow is built with **AI coding agents (Claude Code) doing the implementation, wh
 **Stack:** Next.js 16 (App Router, Server Actions) · TypeScript strict · Supabase (Postgres + RLS + Auth) · Tailwind / shadcn · Gemini behind an adapter · Vercel · Vitest.
 
 ## What's next
-- **Unified retro:** a weekly score based on long-term progress, with time and money debt in one view.
-- **Journaling**, then an **anticipation agent** that flags conflicts (a deadline vs. a trip) before they happen, still as proposals.
-- Project history, reminders, and travel detection from the calendar.
+- **Now:** validate the last 5 iterations of M2 (Inbox, booking emails, iOS Shortcut, performance, offline mode) against their acceptance criteria.
+- **Next (M3, unified retro):** a retro score based on long-term progress; time and money debt with their projections in one view; a calendar-year heatmap (Jan → Dec).
+- **Later:** journaling (M4), then an anticipation agent that flags conflicts (a deadline vs. a trip) before they happen, still as proposals.
+- **Backlog:** project history, lightweight reminders, trips detected from the calendar, document links on tasks, automatic arrival times.
