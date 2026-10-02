@@ -20,9 +20,9 @@ It is a mobile-first PWA built for one demanding user (me: a master's student ru
 <td width="33%" valign="top"><img src="assets/budget.png" alt="Budget view"><br><b>Budget</b><br>Monthly envelopes, incomes, recurring charges and pots. Multi-currency expenses frozen at the day's EUR rate, with an end-of-month projection.</td>
 </tr>
 <tr>
-<td valign="top"><img src="assets/retro.png" alt="Retro view"><br><b>Retro</b><br>The year at a glance: a daily completion heatmap (tasks done ÷ tasks planned), current streak, active days, days at 80 %+ completion, places visited.<br><sub><i>Simulated one-year history to show the long-term view. Heatmap month labels are static for now (fix planned).</i></sub></td>
+<td valign="top"><img src="assets/retro.png" alt="Retro view"><br><b>Retro</b><br>The past year at a glance: a daily completion heatmap (tasks done ÷ tasks planned) that opens on the latest weeks, current streak, active days, days at 80 %+ completion, places visited.<br><sub><i>Simulated one-year history to show the long-term view.</i></sub></td>
 <td valign="top"><img src="assets/inbox.png" alt="Inbox view"><br><b>Inbox</b><br>Every proposal from the assistant or a booking email lands here. Edit, accept or reject: nothing proposed is written without validation.</td>
-<td valign="top"><img src="assets/assistant.png" alt="AI assistant"><br><b>AI assistant</b><br>Knows your week, projects and deadlines. It answers and <i>proposes</i> tasks, task updates or projects; proposals go to the Inbox.<br><sub><i>Assistant reply scripted for the demo.</i></sub></td>
+<td valign="top"><img src="assets/assistant.png" alt="AI assistant"><br><b>AI assistant</b><br>Knows your week, projects and deadlines. It answers and <i>proposes</i> tasks, task updates or projects; proposals go to the Inbox.<br><sub><i>Gemini-powered assistant, shown here on demo data.</i></sub></td>
 </tr>
 </table>
 
