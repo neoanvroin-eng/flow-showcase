@@ -5,7 +5,7 @@
 
 **Flow makes long-term work visible and doable day by day, based on real capacity, and gives a clear view of the monthly budget.**
 Long-term work is invisible in day-to-day tools; Flow turns each project into a stock of minutes and spreads it over the free time that actually exists between classes, trips and routines.
-It is a mobile-first PWA built for one demanding user (me: a master's student running side projects in parallel and traveling continuously), where the AI can propose anything but writes nothing without validation.
+It is a mobile-first PWA built for one demanding user (me: a master's student running side projects in parallel and traveling continuously), where the AI proposes and nothing it suggests enters the plan or the budget without validation.
 
 📄 [Slides (PDF)](flow-slides.pdf) · 🏗 [Architecture](#architecture) · 🧭 [Key decisions](#key-decisions) · 🛠 [Method](#method)
 
@@ -20,9 +20,9 @@ It is a mobile-first PWA built for one demanding user (me: a master's student ru
 <td width="33%" valign="top"><img src="assets/budget.png" alt="Budget view"><br><b>Budget</b><br>Monthly envelopes, incomes, recurring charges and pots. Multi-currency expenses frozen at the day's EUR rate, with an end-of-month projection.</td>
 </tr>
 <tr>
-<td valign="top"><img src="assets/retro.png" alt="Retro view"><br><b>Retro</b><br>Planned vs. actual time, done vs. blocked, and notes left when closing tasks.</td>
-<td valign="top"><img src="assets/inbox.png" alt="Inbox view"><br><b>Inbox</b><br>Every proposal from the assistant, booking emails or shortcuts lands here. Edit, accept or reject: nothing is written without validation.</td>
-<td valign="top"><img src="assets/assistant.png" alt="AI assistant"><br><b>AI assistant</b><br>Knows your week, projects and deadlines. It answers and <i>proposes</i> tasks or projects; proposals go to the Inbox.</td>
+<td valign="top"><img src="assets/retro.png" alt="Retro view"><br><b>Retro</b><br>The year at a glance: a daily completion heatmap (tasks done ÷ tasks planned), current streak, active days, days at 80 %+ completion, places visited.<br><sub><i>Simulated one-year history to show the long-term view. Heatmap month labels are static for now (fix planned).</i></sub></td>
+<td valign="top"><img src="assets/inbox.png" alt="Inbox view"><br><b>Inbox</b><br>Every proposal from the assistant or a booking email lands here. Edit, accept or reject: nothing proposed is written without validation.</td>
+<td valign="top"><img src="assets/assistant.png" alt="AI assistant"><br><b>AI assistant</b><br>Knows your week, projects and deadlines. It answers and <i>proposes</i> tasks, task updates or projects; proposals go to the Inbox.<br><sub><i>Assistant reply scripted for the demo.</i></sub></td>
 </tr>
 </table>
 
@@ -32,7 +32,7 @@ It is a mobile-first PWA built for one demanding user (me: a master's student ru
 |---|---|
 | <img src="assets/add-expense.gif" width="300" alt="Adding an expense"> | <img src="assets/inbox-accept.gif" width="300" alt="Accepting a capture in the Inbox"> |
 
-Also in the product: stays and trips that drive the timezone, weather and blocked travel time · recurring tasks without duplicates · ICS calendar sync · surf conditions for the current stay · an iOS Shortcut (Action button) that logs an expense in under 5 seconds without opening the app · offline mode with a local queue.
+Also in the product: stays and trips that drive the timezone, weather and blocked travel time · recurring tasks without duplicates · ICS calendar sync · surf conditions for the current stay · an iOS Shortcut (Action button) that logs an expense or a task without opening the app, designed to take under 5 seconds · offline mode with a local queue.
 
 ---
 
@@ -85,7 +85,7 @@ flowchart LR
 - Secrets, AI and every external call run server-side only.
 - Every table has `user_id` + owner-only Row Level Security; every schema change is a migration (a script checks RLS coverage).
 - All dates and time zones go through a single `core/time` module (the user lives across time zones).
-- The AI proposes, the user validates: no direct write from the AI or from a capture.
+- The AI proposes, the user validates: nothing from the AI or from a booking email reaches the plan or the budget without validation (only the assistant's own memory of user facts is written directly).
 - Mobile first: every view works one-handed on an iPhone.
 
 ---
@@ -96,13 +96,13 @@ flowchart LR
 
 ### 1. The AI proposes, the user validates
 - **Problem:** an assistant that creates tasks and expenses directly ends up polluting the plan and the budget, and every error has to be found and undone.
-- **Choice:** the assistant's tools (`propose_task`, `propose_project`…) only drop a *capture* into an Inbox. The user edits, accepts (the record is created) or rejects. Acceptance is atomic (`pending → accepted` conditional update, rolled back if creation fails). Booking emails and shortcuts feed the same queue.
-- **Trade-off:** one extra tap per AI action, in exchange for zero uncontrolled writes and a single review surface for every source.
+- **Choice:** the assistant's tools (`propose_task`, `propose_project`…) only drop a *capture* into an Inbox. The user edits, accepts (the record is created) or rejects. Acceptance is atomic (`pending → accepted` conditional update, rolled back if creation fails). Booking emails feed the same queue. The iOS Shortcut is my own direct input, so it writes without a proposal.
+- **Trade-off:** one extra tap per AI action, in exchange for no uncontrolled writes to the plan or the budget, and a single review surface for every automated source.
 
 ### 2. Capacity-based allocation instead of to-do lists
 - **Problem:** long-term projects (a thesis, a side project) don't show up in a to-do list until it's too late.
 - **Choice:** a project is a stock of minutes split into milestones. A pure engine in `core/` computes each day's real capacity (window − calendar blocks − trip buffers − planned tasks), serves the nearest deadline first and spreads each project evenly until it, in 30-min chunks or full sessions. What doesn't fit becomes **debt with a slip date**.
-- **Trade-off:** requires estimating projects in hours; in return, the long term starts now and every delay has a date. The same engine logic is reused for money envelopes.
+- **Trade-off:** requires estimating projects in hours; in return, the long term starts now and every delay has a date.
 
 ### 3. Booking emails without an agent
 - **Problem:** flights, trains and lodging should land in the plan and the budget without typing them, on a free AI quota.
@@ -130,18 +130,18 @@ flowchart LR
 
 Flow is built with **AI coding agents (Claude Code) doing the implementation, while I act as Product Owner**: I write the vision, cut the roadmap into iterations, define acceptance criteria, test every build on my phone, and decide what goes to production.
 
-- **22 iterations** (sprints), each with explicit acceptance criteria, validated by me on a live preview before merge.
+- **22 iterations**, each scoped as one branch, one pull request and one live preview I test on my iPhone; 20 of them with written acceptance criteria. 17 are validated against their criteria so far, 5 are in production awaiting validation.
 - **31 documented decisions** (`DECISIONS.md`): decision + reason in 3 lines, never revisited without a new entry.
 - **Guardrails written for the agent** (`CLAUDE.md`): architecture invariants, forbidden actions (no secrets, no commits to `main`, no migration without approval, no out-of-scope refactor), and a "limits" log instead of silent scope creep.
 - **Repeatable rituals as commands**: `/recap` at session start, `/ship` (typecheck, lint, tests, push, delivery report with the preview link sent to Discord), `/handoff` at session end, `/goprod` for production (migrations + merge) only when I trigger it.
-- **Definition of Done** for every iteration: typecheck, lint and tests pass, RLS checked, works one-handed on iPhone, delivery report with known limits.
+- **Definition of Done** for every iteration: typecheck, lint and tests pass; every schema change is a migration; no database call in components; every touched view checked on iPhone; design tokens respected; a delivery report with known limits, then a live test by me.
 
 ## In numbers
 
 | | |
 |---|---|
 | Duration | 3 weeks (Sep 12 → Oct 2, 2026) |
-| Commits | 126 |
+| Commits (main) | 126 |
 | Pull requests | 25 |
 | Iterations | 22 |
 | Documented decisions | 31 |
