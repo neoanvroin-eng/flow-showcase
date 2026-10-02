@@ -4,8 +4,8 @@
 > All screenshots use fictional demo data.
 
 **Flow makes long-term work visible and doable day by day, based on real capacity, and gives a clear view of the monthly budget.**
-Deadlines months away usually get pushed until they collide; Flow turns each project into a stock of minutes and spreads it over the free time that actually exists between classes, trips and routines.
-It is a mobile-first PWA built for one demanding user (me, a student who works, freelances and travels continuously), where the AI can propose anything but writes nothing without validation.
+Long-term work is invisible in day-to-day tools; Flow turns each project into a stock of minutes and spreads it over the free time that actually exists between classes, trips and routines.
+It is a mobile-first PWA built for one demanding user (me: a master's student running side projects in parallel and traveling continuously), where the AI can propose anything but writes nothing without validation.
 
 📄 [Slides (PDF)](flow-slides.pdf) · 🏗 [Architecture](#architecture) · 🧭 [Key decisions](#key-decisions) · 🛠 [Method](#method)
 
