@@ -15,14 +15,14 @@ It is a mobile-first PWA built for one demanding user (me: a master's student ru
 
 <table>
 <tr>
-<td width="33%" valign="top"><img src="assets/today.png" alt="Today view"><br><b>Today</b><br>What to do now, sized to the free time left today. Quick expense entry in two taps, with currency and stay inferred.</td>
+<td width="33%" valign="top"><img src="assets/today.png" alt="Today view"><br><b>Today</b><br>What to do now and how far the day has gone. Quick expense entry in two taps, with currency and stay inferred, and forgotten expenses can still be added to the last 7 days.</td>
 <td width="33%" valign="top"><img src="assets/week.png" alt="Week view"><br><b>Week</b><br>A capacity-aware plan: each day's window minus calendar blocks, trips and routines. Projects are spread toward their deadline; what doesn't fit becomes visible debt with a slip date.</td>
-<td width="33%" valign="top"><img src="assets/budget.png" alt="Budget view"><br><b>Budget</b><br>Monthly envelopes, incomes, recurring charges and pots. Multi-currency expenses frozen at the day's EUR rate, with an end-of-month projection.</td>
+<td width="33%" valign="top"><img src="assets/budget.png" alt="Budget view"><br><b>Budget</b><br>Monthly envelopes, incomes, recurring charges and pots. Multi-currency expenses frozen at the day's EUR rate, with a full-screen list to edit or requalify several expenses at once.</td>
 </tr>
 <tr>
 <td valign="top"><img src="assets/retro.png" alt="Retro view"><br><b>Retro</b><br>The past year at a glance: a daily completion heatmap (tasks done ÷ tasks planned) that opens on the latest weeks, current streak, active days, days at 80 %+ completion, places visited.<br><sub><i>Simulated one-year history to show the long-term view.</i></sub></td>
 <td valign="top"><img src="assets/inbox.png" alt="Inbox view"><br><b>Inbox</b><br>Every proposal from the assistant or a booking email lands here. Edit, accept or reject: nothing proposed is written without validation.</td>
-<td valign="top"><img src="assets/assistant.png" alt="AI assistant"><br><b>AI assistant</b><br>Knows your week, projects and deadlines. It answers and <i>proposes</i> tasks, task updates or projects; proposals go to the Inbox.<br><sub><i>Gemini-powered assistant, shown here on demo data.</i></sub></td>
+<td valign="top"><img src="assets/assistant.png" alt="AI assistant"><br><b>AI assistant</b><br>Opens from the <i>Ask Flow</i> bar at the top of every screen. Knows your week, projects and deadlines. It answers and <i>proposes</i> tasks, task updates or projects; proposals go to the Inbox.<br><sub><i>Gemini-powered assistant, shown here on demo data.</i></sub></td>
 </tr>
 </table>
 
@@ -32,7 +32,7 @@ It is a mobile-first PWA built for one demanding user (me: a master's student ru
 |---|---|
 | <img src="assets/add-expense.gif" width="300" alt="Adding an expense"> | <img src="assets/inbox-accept.gif" width="300" alt="Accepting a capture in the Inbox"> |
 
-Also in the product: stays and trips that drive the timezone, weather and blocked travel time · recurring tasks without duplicates · ICS calendar sync · surf conditions for the current stay · an iOS Shortcut (Action button) that logs an expense or a task without opening the app, designed to take under 5 seconds · offline mode with a local queue.
+Also in the product: Flow as a <b>Claude connector</b> (MCP, OAuth) to read the plan and budget or dictate an expense from any Claude chat · expense places: the iOS Shortcut sends its position and nearby places from OpenStreetMap are proposed in the Inbox · stays and trips that drive the timezone, weather and blocked travel time · recurring tasks without duplicates · ICS calendar sync · surf conditions for the current stay · an iOS Shortcut (Action button) that logs an expense or a task without opening the app, designed to take under 5 seconds · offline mode with a local queue.
 
 ---
 
@@ -52,7 +52,7 @@ flowchart LR
     QR["Queries<br/>modules/*/queries.ts"]
     CORE["core/<br/>pure engine: capacity,<br/>allocation, time zones"]
     AI["lib/ai adapter"]
-    API["API routes<br/>/api/chat · /api/capture/email<br/>/api/shortcut · cron"]
+    API["API routes<br/>/api/chat · /api/capture/email<br/>/api/shortcut · /api/mcp · cron"]
   end
 
   subgraph Supabase["Supabase (eu-central-1)"]
@@ -65,6 +65,8 @@ flowchart LR
   ICS["ICS calendars"]
   FX["Currency API"]
   OM["Open-Meteo marine"]
+  CL["Claude.ai<br/>(MCP connector)"]
+  OSM["OpenStreetMap<br/>(nearby places)"]
 
   UI --> SA & QR
   UI -. offline .-> Q -. back online .-> SA
@@ -78,6 +80,9 @@ flowchart LR
   CAP -- accepted by the user --> DB
   API -- cron --> ICS & FX
   API --> OM
+  CL -- OAuth --> API
+  API -- places --> OSM
+  API -- place proposals --> CAP
 ```
 
 **Invariants enforced across the codebase**
@@ -85,18 +90,18 @@ flowchart LR
 - Secrets, AI and every external call run server-side only.
 - Every table has `user_id` + owner-only Row Level Security; every schema change is a migration (a script checks RLS coverage).
 - All dates and time zones go through a single `core/time` module (the user lives across time zones).
-- The AI proposes, the user validates: nothing from the AI or from a booking email reaches the plan or the budget without validation (only the assistant's own memory of user facts is written directly).
+- The AI proposes, the user validates: nothing from the AI, a booking email or an external source reaches the plan or the budget without validation. What I type or dictate myself (an expense from the iOS Shortcut or from Claude) is written directly, and so is the assistant's own memory of user facts.
 - Mobile first: every view works one-handed on an iPhone.
 
 ---
 
 ## Key decisions
 
-31 decisions are documented in the private repo (3 lines max each: decision + why). The most structuring ones:
+34 decisions are documented in the private repo (3 lines max each: decision + why). The most structuring ones:
 
 ### 1. The AI proposes, the user validates
 - **Problem:** an assistant that creates tasks and expenses directly ends up polluting the plan and the budget, and every error has to be found and undone.
-- **Choice:** the assistant's tools (`propose_task`, `propose_project`…) only drop a *capture* into an Inbox. The user edits, accepts (the record is created) or rejects. Acceptance is atomic (`pending → accepted` conditional update, rolled back if creation fails). Booking emails feed the same queue. The iOS Shortcut is my own direct input, so it writes without a proposal.
+- **Choice:** the assistant's tools (`propose_task`, `propose_project`…) only drop a *capture* into an Inbox. The user edits, accepts (the record is created) or rejects. Acceptance is atomic (`pending → accepted` conditional update, rolled back if creation fails). Booking emails, nearby places and the Claude connector feed the same queue. An expense I enter myself (iOS Shortcut, or dictated to Claude) is my own input, so it writes without a proposal.
 - **Trade-off:** one extra tap per AI action, in exchange for no uncontrolled writes to the plan or the budget, and a single review surface for every automated source.
 
 ### 2. Capacity-based allocation instead of to-do lists
@@ -130,8 +135,8 @@ flowchart LR
 
 Flow is built with **AI coding agents (Claude Code) doing the implementation, while I act as Product Owner**: I write the vision, cut the roadmap into iterations, define acceptance criteria, test every build on my phone, and decide what goes to production.
 
-- **22 iterations**, each scoped as one branch, one pull request and one live preview I test on my iPhone; 20 of them with written acceptance criteria. 17 are validated against their criteria so far, 5 are in production awaiting validation.
-- **31 documented decisions** (`DECISIONS.md`): decision + reason in 3 lines, never revisited without a new entry.
+- **28 iterations**, each scoped as one branch, one pull request and one live preview I test on my iPhone, most with written acceptance criteria. 24 are validated against their criteria so far, 3 are in production awaiting validation, 1 is in progress.
+- **34 documented decisions** (`DECISIONS.md`): decision + reason in 3 lines, never revisited without a new entry.
 - **Guardrails written for the agent** (`CLAUDE.md`): architecture invariants, forbidden actions (no secrets, no commits to `main`, no migration without approval, no out-of-scope refactor), and a "limits" log instead of silent scope creep.
 - **Repeatable rituals as commands**: `/recap` at session start, `/ship` (typecheck, lint, tests, push, delivery report with the preview link sent to Discord), `/handoff` at session end, `/goprod` for production (migrations + merge) only when I trigger it.
 - **Definition of Done** for every iteration: typecheck, lint and tests pass; every schema change is a migration; no database call in components; every touched view checked on iPhone; design tokens respected; a delivery report with known limits, then a live test by me.
@@ -140,17 +145,17 @@ Flow is built with **AI coding agents (Claude Code) doing the implementation, wh
 
 | | |
 |---|---|
-| Duration | 3 weeks (Sep 12 → Oct 2, 2026) |
-| Commits (main) | 126 |
-| Pull requests | 25 |
-| Iterations | 22 |
-| Documented decisions | 31 |
-| Database migrations | 20 |
+| Duration | 1 month (Sep 12 → Oct 11, 2026) |
+| Commits (main) | 155 |
+| Pull requests | 34 |
+| Iterations | 28 |
+| Documented decisions | 34 |
+| Database migrations | 22 |
 
 **Stack:** Next.js 16 (App Router, Server Actions) · TypeScript strict · Supabase (Postgres + RLS + Auth) · Tailwind / shadcn · Gemini behind an adapter · Vercel · Vitest.
 
 ## What's next
-- **Now:** validate the last 5 iterations of M2 (Inbox, booking emails, iOS Shortcut, performance, offline mode) against their acceptance criteria.
+- **Now:** finish M2: validate stays and country of residence, the full expense list and expense places, and finish a screen-by-screen pass that strips generic "AI app" UI patterns (floating assistant bubble, cards everywhere, filler text).
 - **Next (M3, unified retro):** a retro score based on long-term progress; time and money debt with their projections in one view; a calendar-year heatmap (Jan → Dec).
 - **Later:** journaling (M4), then an anticipation agent that flags conflicts (a deadline vs. a trip) before they happen, still as proposals.
 - **Backlog:** project history, lightweight reminders, trips detected from the calendar, document links on tasks, automatic arrival times.
