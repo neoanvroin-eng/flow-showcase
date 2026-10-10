@@ -146,9 +146,9 @@ Flow is built with **AI coding agents (Claude Code) doing the implementation, wh
 | | |
 |---|---|
 | Duration | 1 month (Sep 12 → Oct 11, 2026) |
-| Commits (main) | 155 |
 | Pull requests | 34 |
-| Iterations | 28 |
+| Iterations | 28 in 30 days |
+| Automated tests | 134 |
 | Documented decisions | 34 |
 | Database migrations | 22 |
 
